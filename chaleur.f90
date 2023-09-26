@@ -11,6 +11,6 @@ program chaleur
     end do
 
     print*, 'approx. de sqrt(2) :',u
-    
+    print*,'utilisation de git'
     
 end program chaleur
