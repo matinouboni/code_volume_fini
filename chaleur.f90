@@ -12,5 +12,6 @@ program chaleur
 
     print*, 'approx. de sqrt(2) :',u
     print*,'utilisation de git'
+    print*,'la vie est belle '
     
 end program chaleur
