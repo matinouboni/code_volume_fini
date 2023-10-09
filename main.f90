@@ -3,6 +3,7 @@ program chaleur
     use mod_maillage
     use mod_sortie
     use mod_precision
+    use mod_solexacte
 
     implicit none
 
@@ -30,7 +31,7 @@ program chaleur
     integer  :: n
 
     !allocation et initialisation des tableaux T et Tnp1
-    real(pr), dimension(:), allocatable :: T, Tnp1
+    real(pr), dimension(:), allocatable :: T, Tnp1,erreur
 
 
     !pas de temps 
@@ -40,15 +41,7 @@ program chaleur
     integer :: i
     integer :: j
     !variable Fe
-    real(pr) :: Fe=0
-
-
-    ! initialisation de T
-
-    do i=1,nb_mailles
-        T(i)=T_init
-    end do
-
+    real(pr) :: Fe
 
     open ( unit=10, file = 'cas_1d.mesh' )
 
@@ -61,6 +54,14 @@ program chaleur
 
     ! Fermeture du fichier
         close(10)
+
+    ! initialisation de T
+        allocate(T(nb_mailles),Tnp1(nb_mailles),erreur(nb_mailles))
+
+    do i=1,nb_mailles
+        T(i)=T_init
+    end do
+    
 
     !calcul du pas de temps delta_t
     dt=0
@@ -86,24 +87,26 @@ program chaleur
 
     print*,'Nombre d_iteration en temps', Nbr_iter
 
+ 
+
     Tnp1=T
     ! construction du schema 
 
     do n=1,Nbr_iter
         do i=1,nb_aretes
             if(maille_arete(i,2) .NE. 0) then
-                Fe = (T(maille_arete(i,1)-maille_arete(i,2)))/d_arete(i)
-                Tnp1(maille_arete(i,1))=T(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
-                Tnp1(maille_arete(i,2))=T(maille_arete(i,2))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,2))
+                Fe = (T(maille_arete(i,1))-T(maille_arete(i,2)))/d_arete(i)
+                Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+                Tnp1(maille_arete(i,2))=Tnp1(maille_arete(i,2))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,2))
             elseif(cl_arete(i)==10) then 
-                Fe=T_G-T(maille_arete(i,1))/d_arete(i)
-                Tnp1(maille_arete(i,1))=T(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+             Fe=(T_G-T(maille_arete(i,1)))/d_arete(i)
+                 Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
             elseif(cl_arete(i)==11) then 
-                Fe=T_D-T(maille_arete(i,1))/d_arete(i)
-                Tnp1(maille_arete(i,1))=T(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+                Fe=(T_D-T(maille_arete(i,1)))/d_arete(i)
+                 Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
             elseif(cl_arete(i)==20) then 
                 Fe=0
-                Tnp1(maille_arete(i,1))=T(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+                Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
             end if
         end do
         T=Tnp1
@@ -111,6 +114,18 @@ program chaleur
             call sortie(n,T, coord_noeud, noeud_maille)
         end if 
     end do
+
+
+    do i=1,nb_mailles
+        erreur(i)=abs(T(i)-T_exacte(T_G,T_D,milieu_arete(i,1),Nbr_iter*dt,D))
+    end do
+
+
+
+    
+
+
+    
 
 
 end program chaleur

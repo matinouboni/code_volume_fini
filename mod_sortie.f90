@@ -33,7 +33,7 @@ contains
     
 
     write(it_ch,*) iter
-    open(unit=20,file='sortie_'//trim(adjustl(it_ch))//'.vtk')
+    open(unit=20,file='sortie/sortie_'//trim(adjustl(it_ch))//'.vtk')
     nb_noeuds = size(coord_noeud,1)
     nb_mailles = size(T,1)
 

@@ -5,7 +5,7 @@ FC = gfortran
 FFLAGS = -Wall -O2
 
 # Liste des fichiers sources
-SRCS = main.f90 mod_precision.f90 mod_maillage.f90 mod_sortie.f90
+SRCS = main.f90 mod_precision.f90 mod_maillage.f90 mod_sortie.f90 mod_solexacte.f90
 
 # Nom de l'exécutable
 TARGET = mon_programme
