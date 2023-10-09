@@ -3,7 +3,6 @@ program chaleur
     use mod_maillage
     use mod_sortie
     use mod_precision
-    use mod_solexacte
 
     implicit none
 
@@ -31,7 +30,7 @@ program chaleur
     integer  :: n
 
     !allocation et initialisation des tableaux T et Tnp1
-    real(pr), dimension(:), allocatable :: T, Tnp1,erreur
+    real(pr), dimension(:), allocatable :: T, Tnp1
 
 
     !pas de temps 
@@ -42,6 +41,7 @@ program chaleur
     integer :: j
     !variable Fe
     real(pr) :: Fe
+    real(pr) erreur1d
 
     open ( unit=10, file = 'cas_1d.mesh' )
 
@@ -56,7 +56,7 @@ program chaleur
         close(10)
 
     ! initialisation de T
-        allocate(T(nb_mailles),Tnp1(nb_mailles),erreur(nb_mailles))
+        allocate(T(nb_mailles),Tnp1(nb_mailles))
 
     do i=1,nb_mailles
         T(i)=T_init
@@ -116,13 +116,36 @@ program chaleur
     end do
 
 
-    do i=1,nb_mailles
-        erreur(i)=abs(T(i)-T_exacte(T_G,T_D,milieu_arete(i,1),Nbr_iter*dt,D))
+
+    erreur1d=0
+    do i=1,nb_aretes
+        if(maille_arete(i,2)==0)then 
+            erreur1d=erreur1d+abs(T(maille_arete(i,1))-T_exacte(T_G,T_D,milieu_arete(i,1),Nbr_iter*dt,D))
+        end if
+        
     end do
 
+    print*,"erreur1d=",dt*erreur1d
 
 
-    
+
+
+
+    print*,""
+
+
+    contains
+
+    function T_exacte(T_G, T_D, x,t, D) result(theta)
+        real(pr), intent (in)::  T_G, T_D, D ,x,t
+        real(Pr)::theta
+         integer::n
+         theta=x
+         do n=1,100
+            theta=theta+(2/(n*pi))*((-1)**n)*exp(-D*((n*pi)**2)*t)*sin(n*pi*x)
+         end do
+         theta=T_G+(T_D-T_G)*theta
+    end function T_exacte
 
 
     
