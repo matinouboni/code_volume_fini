@@ -5,7 +5,10 @@ FC = gfortran
 FFLAGS = -Wall -O2
 
 # Liste des fichiers sources
-SRCS = main.f90 mod_precision.f90 mod_maillage.f90 mod_sortie.f90 
+SRCS = main.f90 mod_precision.f90 mod_solexacte.f90 mod_maillage.f90 mod_sortie.f90 
+
+# Noms des fichiers objets correspondants
+OBJS = $(SRCS:.f90=.o)
 
 # Nom de l'exécutable
 TARGET = mon_programme
@@ -14,7 +17,7 @@ TARGET = mon_programme
 all: $(TARGET)
 
 # Compilation des fichiers objets
-$(TARGET): $(SRCS:.f90=.o)
+$(TARGET): $(OBJS)
 	$(FC) $(FFLAGS) -o $@ $^
 
 # Règle générique pour la compilation des fichiers source en fichiers objets

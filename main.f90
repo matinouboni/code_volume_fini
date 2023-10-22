@@ -3,7 +3,8 @@ program chaleur
     use mod_maillage
     use mod_sortie
     use mod_precision
-
+    use mod_solexacte
+    
     implicit none
 
     !--- entree
@@ -39,24 +40,26 @@ program chaleur
     real(pr) :: temp
     integer :: i
     integer :: j
-    !variable Fe
     real(pr) :: Fe
-    real(pr) erreur1d
+    real(pr) ::erreurL2
+    real(pr) :: x
+    real(pr) :: s
 
-    open ( unit=10, file = 'cas_1d.mesh' )
+
 
     fichier_maillage='cas_1d.mesh'
-    
+    !print*,'bonjour'
 
     call maillage(fichier_maillage, nb_mailles, nb_aretes                    &
         &         , coord_noeud, noeud_maille, aire_maille, l_arete, d_arete &
         &         , milieu_arete, arete_maille, maille_arete, cl_arete)
 
     ! Fermeture du fichier
-        close(10)
+    !close(10)
+
 
     ! initialisation de T
-        allocate(T(nb_mailles),Tnp1(nb_mailles))
+    allocate(T(nb_mailles),Tnp1(nb_mailles))
 
     do i=1,nb_mailles
         T(i)=T_init
@@ -116,39 +119,73 @@ program chaleur
     end do
 
 
-
-    erreur1d=0
-    do i=1,nb_aretes
-        if(maille_arete(i,2)==0)then 
-            erreur1d=erreur1d+abs(T(maille_arete(i,1))-T_exacte(T_G,T_D,milieu_arete(i,1),Nbr_iter*dt,D))
-        end if
-        
+    !calcul de l'erreur relative L2
+    s=0
+    erreurL2=0
+    do i=1,nb_mailles
+        x=(1.0/3.0)*(coord_noeud(noeud_maille(i,1),1)+coord_noeud(noeud_maille(i,2),1)+coord_noeud(noeud_maille(i,3),1))
+        erreurL2=erreurL2+(abs(T(i)-T_exacte(T_G,T_D,x,(Nbr_iter+1)*dt,D))**2)*aire_maille(i)  
+        s=s+abs(T_exacte(T_G,T_D,x,Nbr_iter*dt,D)**2)*aire_maille(i)
     end do
 
-    print*,"erreur1d=",dt*erreur1d
+    erreurL2=sqrt(erreurL2)/sqrt(s)
+    print*,"erreurL2=",erreurL2
 
 
+    ! maillage et erreur 
+
+    ! fichier_maillage='maillage3.mesh'
+
+    ! call maillage(fichier_maillage, nb_mailles, nb_aretes                    &
+    !     &         , coord_noeud, noeud_maille, aire_maille, l_arete, d_arete &
+    !     &         , milieu_arete, arete_maille, maille_arete, cl_arete)
+
+    ! ! Fermeture du fichier
+    ! close(10)
+
+    ! do i=1,nb_mailles
+    !     T(i)=T_init
+    ! end do
+
+    ! Tnp1=T
+    ! ! construction du schema 
+
+    ! do n=1,Nbr_iter
+    !     do i=1,nb_aretes
+    !         if(maille_arete(i,2) .NE. 0) then
+    !             Fe = (T(maille_arete(i,1))-T(maille_arete(i,2)))/d_arete(i)
+    !             Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))-dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+    !             Tnp1(maille_arete(i,2))=Tnp1(maille_arete(i,2))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,2))
+    !         elseif(cl_arete(i)==10) then 
+    !          Fe=(T_G-T(maille_arete(i,1)))/d_arete(i)
+    !              Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+    !         elseif(cl_arete(i)==11) then 
+    !             Fe=(T_D-T(maille_arete(i,1)))/d_arete(i)
+    !              Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+    !         elseif(cl_arete(i)==20) then 
+    !             Fe=0
+    !             Tnp1(maille_arete(i,1))=Tnp1(maille_arete(i,1))+dt*(l_arete(i)*D*Fe)/aire_maille(maille_arete(i,1))
+    !         end if
+    !     end do
+    !     T=Tnp1
+    !     if(MOD(n,10) == 0) then 
+    !         call sortie(n,T, coord_noeud, noeud_maille)
+    !     end if 
+    ! end do
 
 
+    ! !calcul de l'erreur relative L2
+    ! s=0
+    ! erreurL2=0
+    ! do i=1,nb_mailles
+    !     x=(1.0/3.0)*(coord_noeud(noeud_maille(i,1),1)+coord_noeud(noeud_maille(i,2),1)+coord_noeud(noeud_maille(i,3),1))
+    !     erreurL2=erreurL2+(abs(T(i)-T_exacte(T_G,T_D,x,(Nbr_iter+1)*dt,D))**2)*aire_maille(i)  
+    !     s=s+abs(T_exacte(T_G,T_D,x,Nbr_iter*dt,D)**2)*aire_maille(i)
+    ! end do
 
-    print*,""
+    ! erreurL2=sqrt(erreurL2)/sqrt(s)
+    ! print*,"erreurL2=",erreurL2
 
-
-    contains
-
-    function T_exacte(T_G, T_D, x,t, D) result(theta)
-        real(pr), intent (in)::  T_G, T_D, D ,x,t
-        real(Pr)::theta
-         integer::n
-         theta=x
-         do n=1,100
-            theta=theta+(2/(n*pi))*((-1)**n)*exp(-D*((n*pi)**2)*t)*sin(n*pi*x)
-         end do
-         theta=T_G+(T_D-T_G)*theta
-    end function T_exacte
-
-
-    
 
 
 end program chaleur
